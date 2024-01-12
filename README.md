@@ -1,3 +1,3 @@
 EEG Processing Function
 
-some improvement and function change
+some improvement and function change of MNELAB
