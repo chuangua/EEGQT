@@ -179,7 +179,7 @@ class MainWindow(QMainWindow):
         )
         edit_menu.addSeparator()
         self.actions["set_montage"] = edit_menu.addAction(
-            "Set &montage...", self.set_montage
+            "1.Set &montage...", self.set_montage
         )
         self.actions["clear_montage"] = edit_menu.addAction(
             "Clear montage",
@@ -187,7 +187,7 @@ class MainWindow(QMainWindow):
         )
         edit_menu.addSeparator()
         self.actions["change_ref"] = edit_menu.addAction(
-            "Change &reference...",
+            "7.Change &reference...",
             self.change_reference,
         )
         edit_menu.addSeparator()
@@ -209,13 +209,18 @@ class MainWindow(QMainWindow):
         plot_menu = self.menuBar().addMenu("&Plot")
         self.actions["plot_data"] = plot_menu.addAction(
             QIcon.fromTheme("plot-data"),
-            "Plot &Data",
+            "2.Plot &Data",
             self.plot_data,
         )
         self.actions["plot_psd"] = plot_menu.addAction(
             QIcon.fromTheme("plot-psd"),
-            "Plot &PSD",
+            "3.Plot &PSD",
             self.plot_psd,
+        )
+        self.actions["plot_psd"] = plot_menu.addAction(
+            QIcon.fromTheme("plot-psd"),
+            "4.Plot &PSD TOPO",
+            self.plot_psdtopo,
         )
         plot_menu.addSeparator()
         self.actions["plot_locations"] = plot_menu.addAction(
@@ -260,12 +265,23 @@ class MainWindow(QMainWindow):
         tools_menu = self.menuBar().addMenu("&Tools")
         icon = QIcon.fromTheme("filter-data")
         self.actions["filter"] = tools_menu.addAction(
-            icon, "&Filter data...", self.filter_data
+            icon, "4.&Filter data...", self.filter_data
         )
         icon = QIcon.fromTheme("find-events")
         self.actions["find_events"] = tools_menu.addAction(
             icon, "Find &events...", self.find_events
         )
+        tools_menu.addSeparator()
+
+        self.actions["interpolate_bads"] = tools_menu.addAction(
+            "5.&Interpolate bad channels...", self.interpolate_bads
+        )
+        tools_menu.addSeparator()
+
+        icon = QIcon.fromTheme("run-ica")
+        self.actions["run_ica"] = tools_menu.addAction(icon, "6.&Run &ICA...", self.run_ica)
+        self.actions["apply_ica"] = tools_menu.addAction("Apply &ICA", self.apply_ica)
+
         tools_menu.addSeparator()
         self.actions["resampling"] = tools_menu.addAction(
             "Resampling", self.resampling)
@@ -286,15 +302,9 @@ class MainWindow(QMainWindow):
             "Convert to &haemoglobin",
             self.convert_bl,
         )
+
         tools_menu.addSeparator()
 
-        icon = QIcon.fromTheme("run-ica")
-        self.actions["run_ica"] = tools_menu.addAction(icon, "Run &ICA...", self.run_ica)
-        self.actions["apply_ica"] = tools_menu.addAction("Apply &ICA", self.apply_ica)
-        tools_menu.addSeparator()
-        self.actions["interpolate_bads"] = tools_menu.addAction(
-            "Interpolate bad channels...", self.interpolate_bads
-        )
         tools_menu.addSeparator()
         icon = QIcon.fromTheme("epoch-data")
         self.actions["epoch_data"] = tools_menu.addAction(
@@ -531,7 +541,8 @@ class MainWindow(QMainWindow):
             self.actions["plot_ica_overlay"].setEnabled(enabled and ica)
             # self.actions["plot_ica_properties"].setEnabled(enabled and ica)
 
-            self.actions["interpolate_bads"].setEnabled(enabled and locations and bads)
+            self.actions["interpolate_bads"].setEnabled(enabled)
+            # self.actions["interpolate_bads"].setEnabled(enabled and locations and bads)
             self.actions["events"].setEnabled(enabled)
             self.actions["events_from_annotations"].setEnabled(enabled and annot)
             self.actions["annotations_from_events"].setEnabled(enabled and events)
@@ -876,7 +887,24 @@ class MainWindow(QMainWindow):
         kwds = {}
         if self.model.current["dtype"] == "raw":
             kwds.update({"average": False, "spatial_colors": False})
-        fig = self.model.current["data"].plot_psd(show=False, **kwds)
+        # fig = self.model.current["data"].plot_psd(show=False, **kwds)
+        fig = self.model.current["data"].compute_psd(fmax=60).plot()#plot_psd(show=False, **kwds)
+        if kwds:
+            tmp = ", ".join(f"{key}={value}" for key, value in kwds.items())
+            hist = f"data.plot_psd({tmp})"
+        else:
+            hist = "data.plot_psd()"
+        self.model.history.append(hist)
+        win = fig.canvas.manager.window
+        win.setWindowTitle("Power spectral density")
+        fig.show()
+
+    def plot_psdtopo(self):
+        kwds = {}
+        if self.model.current["dtype"] == "raw":
+            kwds.update({"average": False, "spatial_colors": False})
+        # fig = self.model.current["data"].plot_psd(show=False, **kwds)
+        fig = self.model.current["data"].compute_psd(fmax=60).plot_topo()
         if kwds:
             tmp = ", ".join(f"{key}={value}" for key, value in kwds.items())
             hist = f"data.plot_psd({tmp})"

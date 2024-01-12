@@ -469,7 +469,7 @@ class Model:
 
     @data_changed
     def filter(self, low, high):
-        self.current["data"].filter(low, high)
+        self.current["data"].filter(low, high,n_jobs=16)
         self.current["name"] += f" ({low}-{high} Hz)"
         self.history.append(f"data.filter({low}, {high})")
     
